@@ -168,12 +168,57 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
         submitBtn.innerHTML = `<span class="material-symbols-outlined icon-sm">sync</span> Encrypting &amp; Dispatching Briefing...`;
 
-        setTimeout(() => {
-          showToast('Inquiry Transmitted Successfully', 'Victor Joseph has received your infrastructure briefing and will follow up within 24 hours.');
-          form.reset();
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = `<span class="material-symbols-outlined">rocket_launch</span> Dispatch Technical Briefing Request`;
-        }, 800);
+        const nameVal    = document.getElementById('v-name').value.trim();
+        const emailVal   = document.getElementById('v-email').value.trim();
+        const scopeVal   = document.getElementById('v-scope').value;
+        const priorityVal = document.getElementById('v-priority').value;
+        const messageVal = document.getElementById('v-message').value.trim();
+
+        // Map scope and priority select values to readable labels for the email
+        const scopeLabels = {
+          'cloud-sysops-role':        'Senior Cloud / SysOps Engineering Role',
+          'intune-endpoint-automation':'Intune / Endpoint Automation Consulting',
+          'azure-hybrid-migration':   'Azure / Entra ID Hybrid Migration',
+          'incident-reliability':     'Site Reliability & Major Incident Consulting',
+          'research-mentorship':      'Research & Technical Mentorship'
+        };
+        const priorityLabels = {
+          'immediate':    'Immediate / Q1 Requirement',
+          '1-month':      'Within 30 Days',
+          'exploratory':  'Exploratory Technical Discussion'
+        };
+
+        const payload = {
+          api_key:          'e85805982a72b16f23a0caec3952d391c398fc17ae8cfd599860b98a1de51871',
+          name:             nameVal,
+          email:            emailVal,
+          subject:          `Technical Inquiry – ${scopeLabels[scopeVal] || scopeVal}`,
+          message:          messageVal || '(No additional details provided.)',
+          inquiry_category: scopeLabels[scopeVal]  || scopeVal,
+          timeline:         priorityLabels[priorityVal] || priorityVal
+        };
+
+        fetch('https://api.formsend.ezeroandone.io/submit', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showToast('Inquiry Transmitted Successfully', 'Victor Joseph has received your infrastructure briefing and will follow up within 24 hours.');
+              form.reset();
+            } else {
+              showToast('Transmission Failed', data.message || 'Something went wrong. Please try again or email directly.');
+            }
+          })
+          .catch(() => {
+            showToast('Network Error', 'Unable to send your inquiry. Please check your connection and try again.');
+          })
+          .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span class="material-symbols-outlined">rocket_launch</span> Dispatch Technical Briefing Request`;
+          });
       }
     });
 
